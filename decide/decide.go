@@ -172,7 +172,20 @@ func (d *Decider) Pursue(ctx context.Context, goal string) Outcome {
 			Confidence: action.Confidence,
 		}
 
-		if action.Choice == actionDone || goalSatisfied(resp) {
+		if action.Choice == actionDone {
+			if goalSatisfied(resp) {
+				step.Output = "goal satisfied; no action taken"
+				d.record(&steps, step)
+				return Outcome{Done: true, Steps: steps}
+			}
+			// "done" while the goal_satisfied noul says otherwise is a
+			// contradiction between two answers about the same state:
+			// escalate rather than pick one and hope
+			step.Output = "not executed: the model chose done but did not affirm the goal satisfied"
+			d.record(&steps, step)
+			return Outcome{Steps: steps, Err: contradictionError(action, resp)}
+		}
+		if goalSatisfied(resp) {
 			step.Output = "goal satisfied; no action taken"
 			d.record(&steps, step)
 			return Outcome{Done: true, Steps: steps}
@@ -436,6 +449,15 @@ func windowToken(target string) string {
 func goalSatisfied(resp typesafe.Response) bool {
 	answer, ok := resp.Answers["goal_satisfied"]
 	return ok && answer.Noul > goalSatisfiedThreshold
+}
+
+// contradictionError reports a done choice that the goal_satisfied noul
+// declined to confirm.
+func contradictionError(action typesafe.Answer, resp typesafe.Response) error {
+	answer := resp.Answers["goal_satisfied"]
+	return fmt.Errorf(
+		"the model chose done (confidence %.2f) but scored the goal satisfied at %.2f; the state does not show the goal met. probabilities: %s",
+		action.Confidence, answer.Noul, formatDistribution(action.Probabilities))
 }
 
 func lowConfidenceError(action typesafe.Answer, threshold float64) error {

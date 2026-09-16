@@ -596,3 +596,24 @@ func TestPursueToolErrorFeedsNextStep(t *testing.T) {
 		t.Fatalf("step 2 state missing the tool error: %v", second)
 	}
 }
+
+func TestPursueDoneWithoutGoalSatisfactionEscalates(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+
+	// the choice says done; the noul says the goal is not met. Code must
+	// side with the noul and escalate, never report success.
+	stub := newStubServer(t, map[string]typesafe.Answer{
+		"action":         choice("done", 0.9, map[string]float64{"done": 0.9}),
+		"goal_satisfied": noulAnswer(0.03),
+	})
+
+	d := newDecider(stubClient(stub), tool)
+	out := d.Pursue(context.Background(), "activate TextEdit")
+	if out.Done {
+		t.Fatal("must not report done when goal_satisfied contradicts")
+	}
+	if out.Err == nil || !strings.Contains(out.Err.Error(), "does not show the goal met") {
+		t.Fatalf("expected contradiction error, got %v", out.Err)
+	}
+}
