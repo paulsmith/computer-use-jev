@@ -359,8 +359,11 @@ func TestPursueFillWithoutQuotedTextFails(t *testing.T) {
 
 	d := newDecider(stubClient(stub), tool)
 	out := d.Pursue(context.Background(), "fill in the search field please")
-	if out.Err == nil || !strings.Contains(out.Err.Error(), "double quotes") {
+	if out.Err == nil || !strings.Contains(out.Err.Error(), "names no text to enter") {
 		t.Fatalf("expected a text-extraction error, got %v", out.Err)
+	}
+	if stub.requests > 2 {
+		t.Fatalf("an untypeable goal should fail fast, not observe: %d requests", stub.requests)
 	}
 }
 
@@ -489,8 +492,17 @@ func TestQuotedSegmentAndKeyCombo(t *testing.T) {
 	if got, ok := quotedSegment(`type "hello world" into the field`); !ok || got != "hello world" {
 		t.Fatalf("quotedSegment = %q, %v", got, ok)
 	}
+	if got, ok := quotedSegment("open textedit and type hello, world"); !ok || got != "hello, world" {
+		t.Fatalf("unquoted fallback = %q, %v", got, ok)
+	}
+	if got, ok := quotedSegment("type hello, world into the document"); !ok || got != "hello, world" {
+		t.Fatalf("clause-bounded fallback = %q, %v", got, ok)
+	}
 	if _, ok := quotedSegment("no quotes here"); ok {
 		t.Fatal("expected no quoted segment")
+	}
+	if _, ok := quotedSegment("fill in the search field"); ok {
+		t.Fatal("a verb followed by a preposition names no text")
 	}
 	if _, ok := quotedSegment(`an empty "" segment`); ok {
 		t.Fatal("an empty quote is not usable text")
@@ -615,5 +627,218 @@ func TestPursueDoneWithoutGoalSatisfactionEscalates(t *testing.T) {
 	}
 	if out.Err == nil || !strings.Contains(out.Err.Error(), "does not show the goal met") {
 		t.Fatalf("expected contradiction error, got %v", out.Err)
+	}
+}
+
+func TestPursueWrongKindTokenSnapshotsInstead(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+	tool.outputs[`{"action":"snapshot"}`] = "[e3] AXTextArea [editable]"
+
+	// an app token for the element action type cannot work; the loop must
+	// observe rather than send it
+	stub := newStubServer(t,
+		map[string]typesafe.Answer{
+			"action":         choice("type", 0.9, map[string]float64{"type": 0.9}),
+			"target":         choice("a1", 0.9, map[string]float64{"a1": 0.9}),
+			"goal_satisfied": noulAnswer(0.1),
+		},
+		map[string]typesafe.Answer{
+			"action":         choice("type", 0.9, map[string]float64{"type": 0.9}),
+			"target":         choice("e3", 0.9, map[string]float64{"e3": 0.9}),
+			"goal_satisfied": noulAnswer(0.1),
+		},
+		map[string]typesafe.Answer{
+			"action":         choice("done", 0.9, map[string]float64{"done": 0.9}),
+			"goal_satisfied": noulAnswer(0.9),
+		},
+	)
+
+	d := newDecider(stubClient(stub), tool)
+	out := d.Pursue(context.Background(), `type "hi" into the document`)
+	if out.Err != nil || !out.Done {
+		t.Fatalf("expected recovery then done, got done=%v err=%v", out.Done, out.Err)
+	}
+	for _, call := range tool.calls {
+		if strings.Contains(call, `"target":"a1"`) {
+			t.Fatalf("app token sent as element target: %v", tool.calls)
+		}
+	}
+}
+
+func TestSnapshotTargetsIncludeFlaggedElements(t *testing.T) {
+	obs := newTracker()
+	obs.observeSnapshot("- AXWindow \"Untitled\" [e1]\n  - AXScrollArea [e2]\n    - AXTextArea [focused, editable, e3]\n    - AXScrollBar [disabled, editable, e4]")
+	for _, token := range []string{"e1", "e2", "e3", "e4"} {
+		if !obs.has(token) {
+			t.Errorf("snapshot token %s missing from candidate set", token)
+		}
+	}
+	if _, ok := targetCriteria(obs, "type")["e3"]; !ok {
+		t.Fatal("editable text area missing from typing choices")
+	}
+}
+
+func TestPursueSequenceSharesSessionButNotCompletion(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+	tool.outputs[`{"action":"windows","app":"a1"}`] = `w1 "Untitled" [main]`
+	tool.outputs[`{"action":"snapshot","window":"w1"}`] = "- AXWindow [e1]\n  - AXTextArea [focused, editable, e3]"
+	tool.outputs[`{"action":"snapshot","target":"e1"}`] = tool.outputs[`{"action":"snapshot","window":"w1"}`]
+	response := func(action, target, key string) map[string]typesafe.Answer {
+		a := map[string]typesafe.Answer{"action": choice(action, .95, map[string]float64{action: 1}), "goal_satisfied": noulAnswer(.01)}
+		if action == "done" {
+			a["goal_satisfied"] = noulAnswer(.99)
+		}
+		if target != "" {
+			a["target"] = choice(target, .95, map[string]float64{target: 1})
+		}
+		if key != "" {
+			a["shortcut"] = choice(key, .95, map[string]float64{key: 1})
+		}
+		return a
+	}
+	stub := newStubServer(t, response("activate", "a1", ""), response("done", "", ""), response("press", "a1", "cmd+a"), response("done", "", ""), response("press", "a1", "cmd+b"), response("done", "", ""))
+	goals := []string{"Activate TextEdit", "Select all text in TextEdit", "Make selected text bold in TextEdit"}
+	d := newDecider(stubClient(stub), tool)
+	out := d.PursueSequence(context.Background(), "open textedit select the text and make it bold", goals)
+	if out.Err != nil || !out.Done {
+		t.Fatalf("%+v", out)
+	}
+	var keys []string
+	for _, c := range tool.calls {
+		var a map[string]string
+		if err := json.Unmarshal([]byte(c), &a); err != nil {
+			t.Fatal(err)
+		}
+		if a["action"] == "press" {
+			keys = append(keys, a["key"])
+		}
+	}
+	if fmt.Sprint(keys) != "[cmd+a cmd+b]" {
+		t.Fatalf("keys %v", keys)
+	}
+	for i, s := range out.Steps {
+		if s.Number != i+1 || s.Instruction != i/2+1 {
+			t.Fatalf("bad numbering %+v", s)
+		}
+	}
+	for _, i := range []int{2, 4} {
+		st := stub.states[i]
+		if fmt.Sprint(st["actions_already_taken"]) != "[]" {
+			t.Fatalf("completion leaked: %v", st)
+		}
+		if !strings.Contains(fmt.Sprint(st["last_snapshot"]), "e3") {
+			t.Fatalf("no fresh snapshot: %v", st)
+		}
+		if st["original_goal"] == "" {
+			t.Fatal("original goal lost")
+		}
+	}
+}
+
+func TestSequenceStopsOnFailureAndSharesBudget(t *testing.T) {
+	for _, limit := range []int{1, 2} {
+		t.Run(fmt.Sprint(limit), func(t *testing.T) {
+			tool := newFakeRunner()
+			tool.outputs[`{"action":"apps"}`] = appsOutput
+			stub := newStubServer(t, map[string]typesafe.Answer{"action": choice("apps", .9, nil), "goal_satisfied": noulAnswer(.01)})
+			d := newDecider(stubClient(stub), tool, WithMaxSteps(limit))
+			out := d.PursueSequence(context.Background(), "first then second", []string{"first", "second"})
+			if out.Done || out.Err == nil || len(out.Steps) != limit {
+				t.Fatalf("%+v", out)
+			}
+			for _, st := range stub.states {
+				if st["goal"] != "first" {
+					t.Fatalf("advanced after failure: %v", st)
+				}
+			}
+		})
+	}
+}
+
+func TestShortcutSelection(t *testing.T) {
+	for _, tc := range []struct {
+		goal, key  string
+		confidence float64
+		want       string
+	}{
+		{"make selected text bold", "cmd+b", .95, "cmd+b"},
+		{"select all text", "cmd+a", .95, "cmd+a"},
+		{"press cmd+s", "cmd+b", .1, "cmd+s"},
+		{"make bold", "cmd+b", .1, ""},
+		{"make bold", "none", .95, ""},
+		{"make bold", "cmd+q", .95, ""},
+	} {
+		got, err := shortcutFor(tc.goal, typesafe.Response{Answers: map[string]typesafe.Answer{"shortcut": choice(tc.key, tc.confidence, nil)}}, .5)
+		if tc.want == "" {
+			if err == nil {
+				t.Fatalf("accepted %+v", tc)
+			}
+		} else if err != nil || got != tc.want {
+			t.Fatalf("%+v: %q %v", tc, got, err)
+		}
+	}
+}
+
+func TestSequenceBudgetIncludesCompletedInstructions(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+	stub := newStubServer(t,
+		map[string]typesafe.Answer{"action": choice("done", .99, nil), "goal_satisfied": noulAnswer(.99)},
+		map[string]typesafe.Answer{"action": choice("apps", .99, nil), "goal_satisfied": noulAnswer(.01)},
+	)
+	out := newDecider(stubClient(stub), tool, WithMaxSteps(2)).PursueSequence(context.Background(), "first then second", []string{"first", "second"})
+	if out.Done || out.Err == nil || len(out.Steps) != 2 || stub.requests != 2 {
+		t.Fatalf("out=%+v requests=%d", out, stub.requests)
+	}
+}
+
+func TestSemanticShortcutRejectedBeforeInput(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+	stub := newStubServer(t, map[string]typesafe.Answer{"action": choice("press", .99, nil), "target": choice("a1", .99, nil), "shortcut": choice("cmd+b", .1, nil), "goal_satisfied": noulAnswer(.01)})
+	out := newDecider(stubClient(stub), tool).Pursue(context.Background(), "make selection bold")
+	if out.Err == nil {
+		t.Fatal("uncertain shortcut accepted")
+	}
+	for _, c := range tool.calls {
+		if strings.Contains(c, `"action":"press"`) {
+			t.Fatalf("sent uncertain shortcut: %s", c)
+		}
+	}
+}
+
+func TestSequenceDryRunNeverAdvances(t *testing.T) {
+	tool := newFakeRunner()
+	stub := newStubServer(t, map[string]typesafe.Answer{"action": choice("apps", .99, nil), "goal_satisfied": noulAnswer(.01)})
+	out := newDecider(stubClient(stub), tool, WithDryRun(true)).PursueSequence(context.Background(), "first then second", []string{"first", "second"})
+	if out.Err != nil || out.Done || stub.requests != 1 || len(tool.calls) != 0 {
+		t.Fatalf("%+v, requests=%d calls=%v", out, stub.requests, tool.calls)
+	}
+}
+
+func TestSequenceRefreshPreservesPreviouslyInspectedWindow(t *testing.T) {
+	tool := newFakeRunner()
+	tool.outputs[`{"action":"apps"}`] = appsOutput
+	tool.outputs[`{"action":"snapshot"}`] = "- AXWindow \"Other document\" [e1]\n  - AXTextArea [editable, e3]"
+	tool.outputs[`{"action":"snapshot","target":"e1"}`] = "- AXWindow \"Other document\" [e1]\n  - AXTextArea [focused, editable, e3]"
+	stub := newStubServer(t,
+		map[string]typesafe.Answer{"action": choice("snapshot", .99, nil), "goal_satisfied": noulAnswer(.01)},
+		map[string]typesafe.Answer{"action": choice("done", .99, nil), "goal_satisfied": noulAnswer(.99)},
+		map[string]typesafe.Answer{"action": choice("done", .99, nil), "goal_satisfied": noulAnswer(.99)},
+	)
+	out := newDecider(stubClient(stub), tool).PursueSequence(context.Background(), "inspect then inspect again", []string{"inspect", "inspect again"})
+	if out.Err != nil || !out.Done {
+		t.Fatalf("%+v", out)
+	}
+	found := false
+	for _, c := range tool.calls {
+		if c == `{"action":"snapshot","target":"e1"}` {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("lost prior window scope: %v", tool.calls)
 	}
 }

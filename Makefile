@@ -2,6 +2,7 @@
 
 build:
 	go build ./...
+	go build -o build/computer_use ./cmd/computeruser
 
 test:
 	go test ./...

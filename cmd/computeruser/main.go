@@ -19,6 +19,7 @@ import (
 
 	"github.com/paulsmith/computeruser/computeruse"
 	"github.com/paulsmith/computeruser/decide"
+	"github.com/paulsmith/computeruser/planner"
 	"github.com/paulsmith/computeruser/typesafe"
 )
 
@@ -32,8 +33,8 @@ func main() {
 func run() error {
 	fs := flag.NewFlagSet("computeruser", flag.ContinueOnError)
 	goal := fs.String("goal", "", "natural-language goal for the decider to pursue")
-	maxSteps := fs.Int("max-steps", 0, "bound on decision steps (default 16)")
-	dryRun := fs.Bool("dry-run", false, "print the decisions but execute nothing")
+	maxSteps := fs.Int("max-steps", 0, "total decision-step budget across all instructions (default 16)")
+	dryRun := fs.Bool("dry-run", false, "classify and print the instruction plan without desktop access")
 	asJSON := fs.Bool("json", false, "write an ndjson trace of steps to stdout")
 	key := fs.String("key", "", "TypeSafe API key (defaults to TYPESAFE_API_KEY)")
 	if err := fs.Parse(os.Args[1:]); err != nil {
@@ -52,14 +53,31 @@ func run() error {
 		return err
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	instructions, err := planner.Plan(ctx, client, *goal)
+	if err != nil {
+		return err
+	}
+	if err := printPlan(*goal, instructions, *asJSON); err != nil {
+		return err
+	}
+	if *dryRun {
+		return nil
+	}
+	lastInstruction := 0
+
 	opts := []decide.Option{
-		decide.WithDryRun(*dryRun),
 		decide.WithStepReporter(func(step decide.Step) {
+			if !*asJSON && step.Instruction != lastInstruction {
+				fmt.Printf("instruction %d/%d: %s\n", step.Instruction, len(instructions), step.Goal)
+				lastInstruction = step.Instruction
+			}
 			for i, image := range step.Images {
 				if path, err := saveImage(step.Number, i, image); err == nil {
-					fmt.Printf("screenshot saved: %s\n", path)
+					fmt.Fprintf(os.Stderr, "screenshot saved: %s\n", path)
 				} else {
-					fmt.Printf("screenshot not saved: %v\n", err)
+					fmt.Fprintf(os.Stderr, "screenshot not saved: %v\n", err)
 				}
 			}
 			if *asJSON {
@@ -80,10 +98,7 @@ func run() error {
 		opts = append(opts, decide.WithMaxSteps(*maxSteps))
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	out := decide.NewDecider(client, tool, opts...).Pursue(ctx, *goal)
+	out := decide.NewDecider(client, tool, opts...).PursueSequence(ctx, *goal, instructions)
 	if out.Err != nil {
 		return out.Err
 	}
@@ -201,4 +216,21 @@ func saveImage(step, index int, image computeruse.ItemImage) (string, error) {
 
 func writeJSON(v any) error {
 	return json.NewEncoder(os.Stdout).Encode(v)
+}
+
+func printPlan(goal string, instructions []string, asJSON bool) error {
+	if asJSON {
+		return writeJSON(struct {
+			Type         string   `json:"type"`
+			Goal         string   `json:"goal"`
+			Instructions []string `json:"instructions"`
+		}{"plan", goal, instructions})
+	}
+	if len(instructions) > 1 {
+		fmt.Println("Plan:")
+		for i, instruction := range instructions {
+			fmt.Printf("  %d. %s\n", i+1, instruction)
+		}
+	}
+	return nil
 }
