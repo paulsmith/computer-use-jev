@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/paulsmith/computeruser/internal/herbie/provider"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/provider"
 )
 
 // StreamParser is the protocol-specific state for one HTTP/SSE attempt.

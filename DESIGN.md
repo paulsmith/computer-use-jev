@@ -1,4 +1,4 @@
-# computeruser — design
+# computer-use-jev — design
 
 Extract Herbie's `computer_use` tool into a standalone Go repository and add
 **typesafe** support: **Jev** (TypeSafe's System One decision model) as the
@@ -20,8 +20,8 @@ confidence "tells you whether to act").
 ## Repository layout
 
 ```
-computeruser/
-├── go.mod                        module github.com/paulsmith/computeruser, go 1.26
+computer-use-jev/
+├── go.mod                        module github.com/paulsmith/computer-use-jev, go 1.26
 ├── LICENSE                       MIT (copy from herbie)
 ├── README.md
 ├── Makefile
@@ -44,7 +44,7 @@ computeruser/
 ├── decide/
 │   ├── decide.go                 Jev decision loop: goal → action plan → execute
 │   └── decide_test.go
-└── cmd/computeruser/main.go      CLI driver
+└── cmd/computer-use-jev/main.go      CLI driver
 ```
 
 ## Package boundaries
@@ -68,7 +68,7 @@ Herbie dependencies to inline (they're tiny, self-contained):
 - `parseObject` / `jsonString` / `jsonNull` / `validateJSONStrings` /
   `duplicateField` → `args.go`
 - `capToolText` / `capLineLengths` / `outputCapBytes` → `cap.go` (env var
-  renamed `COMPUTERUSER_TOOL_OUTPUT_CAP`; constants kept)
+  renamed `COMPUTER_USE_JEV_TOOL_OUTPUT_CAP`; constants kept)
 - `text.SanitizeUTF8` / `text.TruncateUTF8` → inlined into `cap.go`
 - `decodeImageB64` / `sniffImage` / imageInfo → `image.go`, pruned to
   PNG-only support (only format the worker emits) — keep gif/webp/jpeg checks
@@ -87,7 +87,7 @@ API changes for standalone use:
 - Worker identity string stays `"herbie-computer-use"` (protocol-compat with
   the Swift worker's hardcoded identity check — **do not rename**; it's a
   handshake field, see main.swift dispatch: `["server": "herbie-computer-use"]`).
-- Compile cache dir: `os.UserCacheDir()/computeruser/computer-use/<sha256>`
+- Compile cache dir: `os.UserCacheDir()/computer-use-jev/computer-use/<sha256>`
   (was `herbie/computer-use/...`).
 
 ### typesafe (new)
@@ -181,14 +181,14 @@ the CLI prints a suggested next action from the highest-probability option
 alongside its distribution so a human (or a reasoning LLM elsewhere) can
 take over. Jev stays the decision maker; it never fakes certainty.
 
-### cmd/computeruser (CLI driver)
+### cmd/computer-use-jev (CLI driver)
 
 ```
-computeruser -goal "open TextEdit and type hello world"
-computeruser -goal "..." -max-steps 24      # loop bound
-computeruser -goal "..." -dry-run           # print decisions, execute nothing
-computeruser -goal "..." -json              # ndjson trace of steps
-computeruser apps                            # direct passthrough (no Jev)
+computer-use-jev -goal "open TextEdit and type hello world"
+computer-use-jev -goal "..." -max-steps 24      # loop bound
+computer-use-jev -goal "..." -dry-run           # print decisions, execute nothing
+computer-use-jev -goal "..." -json              # ndjson trace of steps
+computer-use-jev apps                            # direct passthrough (no Jev)
 ```
 
 - Flags: `-goal`, `-max-steps`, `-dry-run`, `-json`, `-key` (else env).
@@ -217,6 +217,6 @@ computeruser apps                            # direct passthrough (no Jev)
 ## Verification
 
 `make build test` → `go build ./...`, `go vet ./...`, `go test ./...`.
-Live smoke: `computeruser -goal "list running apps"` against the real Jev
+Live smoke: `computer-use-jev -goal "list running apps"` against the real Jev
 API (needs `TYPESAFE_API_KEY`) and the real worker (needs Accessibility
 grant for the terminal).

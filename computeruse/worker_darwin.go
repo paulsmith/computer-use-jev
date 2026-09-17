@@ -44,7 +44,7 @@ func computerUseWorkerPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("locate cache directory: %w", err)
 	}
-	dir := filepath.Join(cache, "computeruser", "computer-use", hex.EncodeToString(sum[:]))
+	dir := filepath.Join(cache, "computer-use-jev", "computer-use", hex.EncodeToString(sum[:]))
 	binary := filepath.Join(dir, "herbie-computer")
 	if info, statErr := os.Stat(binary); statErr == nil && !info.IsDir() && info.Mode()&0o111 != 0 {
 		return binary, nil

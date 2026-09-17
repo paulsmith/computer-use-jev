@@ -9,7 +9,7 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/paulsmith/computeruser/internal/herbie/config"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/config"
 )
 
 // MCPServer is one resolved mcp.<name> block. Error is set when the block is

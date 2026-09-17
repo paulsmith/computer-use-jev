@@ -32,7 +32,7 @@ func buildComputerUseHelper(t *testing.T) string {
 			computerUseHelperBinary.err = err
 			return
 		}
-		dir, err := os.MkdirTemp("", "computeruser-helper-*")
+		dir, err := os.MkdirTemp("", "computer-use-jev-helper-*")
 		if err != nil {
 			computerUseHelperBinary.err = err
 			return
@@ -55,7 +55,7 @@ func buildComputerUseHelper(t *testing.T) string {
 
 func newTestComputerUse(t *testing.T, mode string) *ComputerUse {
 	t.Helper()
-	t.Setenv("COMPUTERUSER_TEST_MODE", mode)
+	t.Setenv("COMPUTER_USE_JEV_TEST_MODE", mode)
 	return &ComputerUse{resolve: func() (string, error) {
 		return buildComputerUseHelper(t), nil
 	}}
@@ -188,7 +188,7 @@ func TestComputerUseWorkerRestartAfterCrash(t *testing.T) {
 		t.Fatalf("crashed worker output = %q", first.Output)
 	}
 	computerUse.Close()
-	t.Setenv("COMPUTERUSER_TEST_MODE", "ok")
+	t.Setenv("COMPUTER_USE_JEV_TEST_MODE", "ok")
 	second := computerUse.Run(`{"action":"apps"}`, 0)
 	if !strings.Contains(second.Output, "a1 TextEdit") {
 		t.Fatalf("restarted worker output = %q", second.Output)
@@ -244,15 +244,15 @@ func makeBytes(c byte, n int) []byte {
 }
 
 func TestOutputCapBytes(t *testing.T) {
-	t.Setenv("COMPUTERUSER_TOOL_OUTPUT_CAP", "")
+	t.Setenv("COMPUTER_USE_JEV_TOOL_OUTPUT_CAP", "")
 	if outputCapBytes() != 50*1024 {
 		t.Fatal("default")
 	}
-	t.Setenv("COMPUTERUSER_TOOL_OUTPUT_CAP", "2m")
+	t.Setenv("COMPUTER_USE_JEV_TOOL_OUTPUT_CAP", "2m")
 	if outputCapBytes() != 2*1024*1024 {
 		t.Fatal("m")
 	}
-	t.Setenv("COMPUTERUSER_TOOL_OUTPUT_CAP", "bad")
+	t.Setenv("COMPUTER_USE_JEV_TOOL_OUTPUT_CAP", "bad")
 	if outputCapBytes() != 50*1024 {
 		t.Fatal("invalid")
 	}

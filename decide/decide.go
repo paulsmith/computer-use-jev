@@ -17,8 +17,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/paulsmith/computeruser/computeruse"
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/computeruse"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 const (

@@ -8,7 +8,7 @@ OpenAI Chat Completions/Responses and Anthropic Messages implementations, and
 only their transitive production dependencies (29 Go files). Provider, text,
 and version tests were copied as well. Production changes consist of import
 and linker-path rewrites from `github.com/paulsmith/herbie/` to
-`github.com/paulsmith/computeruser/internal/herbie/`, plus omission of seven
+`github.com/paulsmith/computer-use-jev/internal/herbie/`, plus omission of seven
 unused private helpers used only by upstream tests/constructors: `loadState`,
 `atomicJSON`, `body`, `newEvents`, `newCompatible`, `newOpenAI`, and `postJSON`.
 

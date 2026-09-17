@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/paulsmith/computeruser/internal/herbie/provider"
-	providerinternal "github.com/paulsmith/computeruser/internal/herbie/providers/internal"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/provider"
+	providerinternal "github.com/paulsmith/computer-use-jev/internal/herbie/providers/internal"
 )
 
 type OfficialProvider struct{ *Provider }

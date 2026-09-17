@@ -1,6 +1,6 @@
 // Command computerusehelper is a fake computer_use worker used by the
 // computeruse package tests. It speaks the worker NDJSON protocol; responses
-// are driven entirely by the COMPUTERUSER_TEST_MODE environment variable:
+// are driven entirely by the COMPUTER_USE_JEV_TEST_MODE environment variable:
 //
 //   - ok:    replies with fixed successful results per method
 //   - fail:  replies with a fixed error for every method after initialize
@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	mode := os.Getenv("COMPUTERUSER_TEST_MODE")
+	mode := os.Getenv("COMPUTER_USE_JEV_TEST_MODE")
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)
 	scanner := bufio.NewScanner(reader)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 var shortcutCriteria = map[string]string{

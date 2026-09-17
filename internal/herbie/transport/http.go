@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/paulsmith/computeruser/internal/herbie/version"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/version"
 )
 
 const DefaultMaxBody int64 = 1 << 20
@@ -122,7 +122,7 @@ func prepare(headers http.Header) http.Header {
 		out = http.Header{}
 	}
 	if out.Get("User-Agent") == "" {
-		out.Set("User-Agent", "github.com/paulsmith/computeruser/internal/herbie/"+version.String())
+		out.Set("User-Agent", "github.com/paulsmith/computer-use-jev/internal/herbie/"+version.String())
 	}
 	return out
 }

@@ -15,8 +15,8 @@ func (f testTransport) RoundTrip(r *http.Request) (*http.Response, error) { retu
 
 func TestDryRunPlansCompoundGoalWithoutExecuting(t *testing.T) {
 	t.Setenv("TYPESAFE_API_KEY", "test")
-	t.Setenv("COMPUTER_USE_PROVIDER", "openrouter")
-	t.Setenv("COMPUTER_USE_MODEL", "test-model")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "openrouter")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "test-model")
 	t.Setenv("OPENROUTER_API_KEY", "test")
 	oldArgs, oldTransport, oldStdout := os.Args, http.DefaultTransport, os.Stdout
 	read, write, err := os.Pipe()
@@ -31,7 +31,7 @@ func TestDryRunPlansCompoundGoalWithoutExecuting(t *testing.T) {
 		_ = write.Close()
 	}()
 	os.Stdout = write
-	os.Args = []string{"computer_use", "-json", "-dry-run", "-goal", "open textedit select the text and make it bold"}
+	os.Args = []string{"computer-use-jev", "-json", "-dry-run", "-goal", "open textedit select the text and make it bold"}
 	calls := 0
 	http.DefaultTransport = testTransport(func(r *http.Request) (*http.Response, error) {
 		calls++

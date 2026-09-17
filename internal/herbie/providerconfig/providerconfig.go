@@ -14,9 +14,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/paulsmith/computeruser/internal/herbie/config"
-	"github.com/paulsmith/computeruser/internal/herbie/trace"
-	"github.com/paulsmith/computeruser/internal/herbie/transport"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/config"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/trace"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/transport"
 )
 
 var reservedBodyFields = map[string]struct{}{

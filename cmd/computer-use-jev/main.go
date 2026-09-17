@@ -1,4 +1,4 @@
-// Command computeruser runs the macOS accessibility tool directly, or drives
+// Command computer-use-jev runs the macOS accessibility tool directly, or drives
 // it toward a natural-language goal with a TypeSafe System One model (Jev)
 // deciding one bounded step at a time.
 package main
@@ -17,21 +17,21 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/paulsmith/computeruser/computeruse"
-	"github.com/paulsmith/computeruser/decide"
-	"github.com/paulsmith/computeruser/planner"
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/computeruse"
+	"github.com/paulsmith/computer-use-jev/decide"
+	"github.com/paulsmith/computer-use-jev/planner"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "computeruser: "+err.Error())
+		fmt.Fprintln(os.Stderr, "computer-use-jev: "+err.Error())
 		os.Exit(1)
 	}
 }
 
 func run() error {
-	fs := flag.NewFlagSet("computeruser", flag.ContinueOnError)
+	fs := flag.NewFlagSet("computer-use-jev", flag.ContinueOnError)
 	goal := fs.String("goal", "", "natural-language goal for the decider to pursue")
 	maxSteps := fs.Int("max-steps", 0, "total decision-step budget across all instructions (default 16)")
 	dryRun := fs.Bool("dry-run", false, "classify and print the instruction plan without desktop access")
@@ -116,11 +116,11 @@ func typesafeClient(key string) (*typesafe.Client, error) {
 }
 
 // passthrough runs one tool call built from the positional arguments, without
-// involving the model: `computeruser apps`, `computeruser windows a1`, or a
+// involving the model: `computer-use-jev apps`, `computer-use-jev windows a1`, or a
 // verbatim JSON input object such as '{"action":"apps"}'.
 func passthrough(tool *computeruse.ComputerUse, args []string, asJSON bool) error {
 	if len(args) == 0 {
-		return errors.New(`nothing to do: pass a goal with -goal, or a tool call such as 'computeruser apps'`)
+		return errors.New(`nothing to do: pass a goal with -goal, or a tool call such as 'computer-use-jev apps'`)
 	}
 
 	input := strings.Join(args, " ")

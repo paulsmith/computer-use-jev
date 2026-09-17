@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 
-	"github.com/paulsmith/computeruser/internal/herbie/provider"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/provider"
 )
 
 func Schema(d provider.ToolDef, requireType bool) map[string]any {

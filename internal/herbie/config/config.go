@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/paulsmith/computeruser/internal/herbie/text"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/text"
 )
 
 const DefaultValue = "(default)"

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/paulsmith/computeruser/internal/herbie/provider"
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/provider"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 const (

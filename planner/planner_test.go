@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paulsmith/computeruser/internal/herbie/provider"
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/internal/herbie/provider"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 type fakeProvider struct {
@@ -61,8 +61,8 @@ func classifier(t *testing.T, probability float64) *typesafe.Client {
 	return typesafe.New("test", typesafe.WithEndpoint(s.URL))
 }
 func TestSingleGoalDoesNotRequireLLM(t *testing.T) {
-	t.Setenv("COMPUTER_USE_PROVIDER", "")
-	t.Setenv("COMPUTER_USE_MODEL", "")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "")
 	goal := `type "bread and butter"`
 	got, err := Plan(context.Background(), classifier(t, 0.01), goal)
 	if err != nil || !reflect.DeepEqual(got, []string{goal}) {
@@ -89,8 +89,8 @@ func TestPlanningFailsBeforeExecution(t *testing.T) {
 			t.Fatalf("probability %v accepted", prob)
 		}
 	}
-	t.Setenv("COMPUTER_USE_PROVIDER", "")
-	t.Setenv("COMPUTER_USE_MODEL", "")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "")
 	if _, err := Plan(context.Background(), classifier(t, 0.99), "select text and make bold"); err == nil {
 		t.Fatal("missing configuration accepted")
 	}
@@ -127,8 +127,8 @@ func TestSplitterFailureAndCancellation(t *testing.T) {
 func TestProviderEnvironment(t *testing.T) {
 	for _, tc := range []struct{ name, key string }{{"openai", "OPENAI_API_KEY"}, {"anthropic", "ANTHROPIC_API_KEY"}, {"openrouter", "OPENROUTER_API_KEY"}} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("COMPUTER_USE_PROVIDER", tc.name)
-			t.Setenv("COMPUTER_USE_MODEL", "chosen-model")
+			t.Setenv("COMPUTER_USE_JEV_PROVIDER", tc.name)
+			t.Setenv("COMPUTER_USE_JEV_MODEL", "chosen-model")
 			t.Setenv(tc.key, "")
 			if _, _, err := fromEnv(); err == nil || !strings.Contains(err.Error(), tc.key) {
 				t.Fatalf("missing key: %v", err)
@@ -140,19 +140,19 @@ func TestProviderEnvironment(t *testing.T) {
 			}
 		})
 	}
-	t.Setenv("COMPUTER_USE_PROVIDER", "lunaroute")
-	t.Setenv("COMPUTER_USE_MODEL", "model")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "lunaroute")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "model")
 	t.Setenv("LUNAROUTE_API_KEY", "test-secret")
-	if _, _, err := fromEnv(); err == nil || !strings.Contains(err.Error(), "unsupported COMPUTER_USE_PROVIDER") {
+	if _, _, err := fromEnv(); err == nil || !strings.Contains(err.Error(), "unsupported COMPUTER_USE_JEV_PROVIDER") {
 		t.Fatalf("removed provider accepted: %v", err)
 	}
-	t.Setenv("COMPUTER_USE_PROVIDER", "unknown")
-	t.Setenv("COMPUTER_USE_MODEL", "model")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "unknown")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "model")
 	if _, _, err := fromEnv(); err == nil {
 		t.Fatal("unknown provider accepted")
 	}
-	t.Setenv("COMPUTER_USE_PROVIDER", "openai")
-	t.Setenv("COMPUTER_USE_MODEL", "")
+	t.Setenv("COMPUTER_USE_JEV_PROVIDER", "openai")
+	t.Setenv("COMPUTER_USE_JEV_MODEL", "")
 	if _, _, err := fromEnv(); err == nil {
 		t.Fatal("missing model accepted")
 	}
@@ -171,8 +171,8 @@ func TestCopiedProvidersStreamPlanWithExpectedCredentials(t *testing.T) {
 		{"openrouter", "OPENROUTER_API_KEY", "/api/v1/chat/completions", "openrouter.ai", "https://ignored.example/v1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("COMPUTER_USE_PROVIDER", tc.name)
-			t.Setenv("COMPUTER_USE_MODEL", "chosen-model")
+			t.Setenv("COMPUTER_USE_JEV_PROVIDER", tc.name)
+			t.Setenv("COMPUTER_USE_JEV_MODEL", "chosen-model")
 			t.Setenv(tc.key, "test-secret")
 			t.Setenv("OPENAI_BASE_URL", tc.baseURL)
 			old := http.DefaultClient

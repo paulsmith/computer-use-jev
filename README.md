@@ -1,4 +1,4 @@
-# computeruser
+# computer-use-jev
 
 Drive macOS applications from Go — with **Jev** ([TypeSafe](https://typesafe.ai)'s
 System One decision model) as the decision maker.
@@ -27,7 +27,7 @@ tool and extended with a typesafe decision layer.
 ## Install
 
 ```sh
-go build ./cmd/computeruser
+go build ./cmd/computer-use-jev
 ```
 
 macOS 14+. Requires the Accessibility permission (and Screen Recording for
@@ -39,19 +39,19 @@ to compile the Swift worker (built once, then cached).
 Let Jev drive toward a goal (needs `TYPESAFE_API_KEY`):
 
 ```sh
-computeruser -goal 'in TextEdit, type "hello world"'
-computeruser -goal 'open Safari and take a screenshot' -json
-computeruser -goal '...' -dry-run        # decide, don't act
-computeruser -goal '...' -max-steps 24
+computer-use-jev -goal 'in TextEdit, type "hello world"'
+computer-use-jev -goal 'open Safari and take a screenshot' -json
+computer-use-jev -goal '...' -dry-run        # decide, don't act
+computer-use-jev -goal '...' -max-steps 24
 ```
 
 Or call the tool directly, no Jev, for scripting:
 
 ```sh
-computeruser apps
-computeruser windows -app a1
-computeruser snapshot -window w1
-computeruser fill -target e3 -text "hi"
+computer-use-jev apps
+computer-use-jev windows -app a1
+computer-use-jev snapshot -window w1
+computer-use-jev fill -target e3 -text "hi"
 ```
 
 ## Development
@@ -77,22 +77,22 @@ sequence; the LLM has no desktop tools. Commands then run through Jev in the
 same worker session, with fresh observations and separate completion state.
 
 ```sh
-export COMPUTER_USE_PROVIDER=openai
-export COMPUTER_USE_MODEL="your-model"
+export COMPUTER_USE_JEV_PROVIDER=openai
+export COMPUTER_USE_JEV_MODEL="your-model"
 # Set OPENAI_API_KEY and TYPESAFE_API_KEY in your environment.
 make build
-./build/computer_use -goal "open textedit select the text and make it bold"
+./build/computer-use-jev -goal "open textedit select the text and make it bold"
 ```
 
 The splitting provider supports:
 
-| COMPUTER_USE_PROVIDER | Credential | Protocol |
+| COMPUTER_USE_JEV_PROVIDER | Credential | Protocol |
 | --- | --- | --- |
 | openai | OPENAI_API_KEY | OpenAI Responses |
 | anthropic | ANTHROPIC_API_KEY | Anthropic Messages |
 | openrouter | OPENROUTER_API_KEY | OpenAI Chat Completions |
 
-`COMPUTER_USE_MODEL` must name a model available through that provider. No
+`COMPUTER_USE_JEV_MODEL` must name a model available through that provider. No
 provider/model is silently chosen, and credentials are never read from Herbie's
 personal configuration. For `openai`, set `OPENAI_BASE_URL` to override
 `https://api.openai.com/v1`; an empty value uses the default. The endpoint must

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/paulsmith/computeruser/computeruse"
+	"github.com/paulsmith/computer-use-jev/computeruse"
 )
 
 // PursueSequence shares the worker session and overall step budget, but gives

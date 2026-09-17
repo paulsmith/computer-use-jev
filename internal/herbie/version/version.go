@@ -3,7 +3,7 @@ package version
 
 import "runtime/debug"
 
-// release is set with -ldflags "-X github.com/paulsmith/computeruser/internal/herbie/version.release=vX.Y.Z" for tagged builds.
+// release is set with -ldflags "-X github.com/paulsmith/computer-use-jev/internal/herbie/version.release=vX.Y.Z" for tagged builds.
 var release string
 
 func String() string {

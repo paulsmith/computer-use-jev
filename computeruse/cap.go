@@ -17,7 +17,7 @@ const (
 
 // outputCapBytes returns the configured tool output cap, defaulting to 50 KiB.
 func outputCapBytes() int {
-	s := strings.TrimSpace(strings.ToLower(os.Getenv("COMPUTERUSER_TOOL_OUTPUT_CAP")))
+	s := strings.TrimSpace(strings.ToLower(os.Getenv("COMPUTER_USE_JEV_TOOL_OUTPUT_CAP")))
 	if s == "" {
 		return defaultOutputCap
 	}

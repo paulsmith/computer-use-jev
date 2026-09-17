@@ -4,7 +4,7 @@ Approved design: a Jev classifier precedes desktop execution. Single goals pass 
 
 ## Configuration and source boundary
 
-Require COMPUTER_USE_PROVIDER and COMPUTER_USE_MODEL only on the splitting branch. Resolve provider keys using Herbie's environment names, including OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, and LUNAROUTE_API_KEY. Copy Herbie's provider interface, OpenAI/Anthropic wire implementations, and their transitive production dependencies into internal/herbie with rewritten imports and attribution. No imports of the Herbie agent runtime or personal config. Lunaroute uses its configured gateway endpoint, never a copied credential.
+Require COMPUTER_USE_JEV_PROVIDER and COMPUTER_USE_JEV_MODEL only on the splitting branch. Resolve provider keys using Herbie's environment names, including OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, and LUNAROUTE_API_KEY. Copy Herbie's provider interface, OpenAI/Anthropic wire implementations, and their transitive production dependencies into internal/herbie with rewritten imports and attribution. No imports of the Herbie agent runtime or personal config. Lunaroute uses its configured gateway endpoint, never a copied credential.
 
 ## Implementation
 
@@ -14,7 +14,7 @@ Require COMPUTER_USE_PROVIDER and COMPUTER_USE_MODEL only on the splitting branc
 - [x] decide/: execute a sequence through the same runner; keep original goal and completed instructions as context, reset per-instruction history, refresh the prior scoped window between instructions, and stop on failed instructions. Apply max-steps across the entire goal. Dry-run never executes later instructions against an unchanged desktop.
 - [x] decide/: select semantic shortcuts from a closed set (select-all, bold, italic, underline, copy, paste, save, undo, redo, none). Explicit shortcuts in the goal retain precedence; reject missing/unknown/low-confidence choices before input.
 - [x] cmd/: plan first, report instruction boundaries in text/JSON, then execute; direct passthrough remains unchanged. Document env vars and examples.
-- [x] Verify full build/vet/tests/race checks and rebuild build/computer_use. Do not commit, push, or mutate real desktop documents during tests.
+- [x] Verify full build/vet/tests/race checks and rebuild build/computer-use-jev. Do not commit, push, or mutate real desktop documents during tests.
 
 ## Risks addressed
 
@@ -27,6 +27,6 @@ provider wire/credential combinations, CLI JSON dry-run, shortcut gating,
 shared-session execution, fresh state/window scope, stopping, and total budgets.
 Live Jev classified a single formatting instruction as single and the requested
 TextEdit sequence as compound. Live LLM splitting was not attempted because
-COMPUTER_USE_PROVIDER, COMPUTER_USE_MODEL, and LUNAROUTE_API_KEY are unset.
+COMPUTER_USE_JEV_PROVIDER, COMPUTER_USE_JEV_MODEL, and LUNAROUTE_API_KEY are unset.
 Full golangci-lint reports seven pre-existing issues in typesafe/ and computeruse/;
 new planner, sequencing, and copied-provider code introduce no lint findings.

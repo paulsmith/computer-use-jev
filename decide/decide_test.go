@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paulsmith/computeruser/computeruse"
-	"github.com/paulsmith/computeruser/typesafe"
+	"github.com/paulsmith/computer-use-jev/computeruse"
+	"github.com/paulsmith/computer-use-jev/typesafe"
 )
 
 // fakeRunner stands in for *computeruse.ComputerUse: starting the real worker
